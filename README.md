@@ -1,4 +1,4 @@
-# Advent of Code 2022
+# Advent of Code 2023
 
 These are my solutions to [Advent of Code 2023](https://adventofcode.com/2023) written in Go.
 This year I'm solving AoC just for practice
