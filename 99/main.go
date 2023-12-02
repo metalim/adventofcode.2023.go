@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+func catch(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: go run main.go input.txt")
@@ -16,11 +22,15 @@ func main() {
 	catch(err)
 	lines := strings.Split(string(bs), "\n")
 
-	fmt.Println(lines)
+	part1(lines)
+	// part2(lines)
 }
 
-func catch(err error) {
-	if err != nil {
-		panic(err)
+func part1(lines []string) {
+	for _, line := range lines {
+		fmt.Println(line)
 	}
+}
+
+func part2(lines []string) {
 }
