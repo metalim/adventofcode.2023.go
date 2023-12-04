@@ -23,7 +23,7 @@ func main() {
 	lines := strings.Split(string(bs), "\n")
 
 	part1(lines)
-	// part2(lines)
+	part2(lines)
 }
 
 func part1(lines []string) {
