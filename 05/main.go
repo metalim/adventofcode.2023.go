@@ -40,15 +40,12 @@ func toInts(ss []string) []int {
 	return is
 }
 
-func part1(lines []string) {
-	strSeeds := reSeeds.FindStringSubmatch(lines[0])[1]
-	seeds := toInts(strings.Fields(strSeeds))
-
+func parseMaps(lines []string) [][][]int {
 	maps := make([][][]int, 0, 7) // map, row, numbers
 
 	var skipNext bool
 	var mmap [][]int
-	for _, line := range lines[1:] {
+	for _, line := range lines {
 		if skipNext {
 			skipNext = false
 			continue
@@ -68,16 +65,30 @@ func part1(lines []string) {
 		maps = append(maps, mmap)
 	}
 
-	closest := -1
-	for _, val := range seeds {
-		for _, mmap := range maps {
-			for _, row := range mmap {
-				if val >= row[1] && val < row[1]+row[2] {
-					val = val - row[1] + row[0]
-					break
-				}
+	return maps
+}
+
+func convert(val int, maps [][][]int) int {
+	for _, mmap := range maps {
+		for _, row := range mmap {
+			if val >= row[1] && val < row[1]+row[2] {
+				val = val - row[1] + row[0]
+				break
 			}
 		}
+	}
+	return val
+}
+
+func part1(lines []string) {
+	strSeeds := reSeeds.FindStringSubmatch(lines[0])[1]
+	seeds := toInts(strings.Fields(strSeeds))
+
+	maps := parseMaps(lines[1:])
+
+	closest := -1
+	for _, val := range seeds {
+		val = convert(val, maps)
 		if closest > val || closest < 0 {
 			closest = val
 		}
@@ -86,4 +97,21 @@ func part1(lines []string) {
 }
 
 func part2(lines []string) {
+	strSeeds := reSeeds.FindStringSubmatch(lines[0])[1]
+	seeds := toInts(strings.Fields(strSeeds))
+
+	maps := parseMaps(lines[1:])
+
+	closest := -1
+	for i := 0; i < len(seeds); i += 2 {
+		length := seeds[i+1]
+		for j := 0; j < length; j++ {
+			val := seeds[i] + j
+			val = convert(val, maps)
+			if closest > val || closest < 0 {
+				closest = val
+			}
+		}
+	}
+	fmt.Println(closest)
 }
