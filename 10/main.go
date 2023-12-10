@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const PLOT = true
+
 func catch(err error) {
 	if err != nil {
 		panic(err)
@@ -53,20 +55,23 @@ var (
 )
 
 func getDirs(char rune) []Pos {
+	// ┌─┐
+	// │ │
+	// └─┘
 	switch char {
-	case 'J':
-		return []Pos{Up, Left}
-	case 'L':
-		return []Pos{Up, Right}
-	case '7':
-		return []Pos{Down, Left}
-	case 'F':
+	case 'F', '┌':
 		return []Pos{Down, Right}
-	case '|':
-		return []Pos{Up, Down}
-	case '-':
+	case '-', '─':
 		return []Pos{Left, Right}
-	case '.':
+	case '7', '┐':
+		return []Pos{Down, Left}
+	case '|', '│':
+		return []Pos{Up, Down}
+	case 'L', '└':
+		return []Pos{Up, Right}
+	case 'J', '┘':
+		return []Pos{Up, Left}
+	case '.', ' ':
 		return nil
 	default:
 		panic("Unknown char " + string(char))
@@ -128,9 +133,172 @@ func part1(lines []string) {
 		}
 		dir = pos.GetNext(dir, lines)
 	}
-	fmt.Println("Part 1:", (steps)/2)
+	if steps%2 != 0 {
+		panic("Steps has to be even")
+	}
+	fmt.Println("Part 1:", steps/2)
+}
+
+func getLineChar(char rune) rune {
+	// F-7
+	// | |
+	// L-J
+	// ┌─┐
+	// │ │
+	// └─┘
+	switch char {
+	case 'F':
+		return '┌'
+	case '-':
+		return '─'
+	case '7':
+		return '┐'
+	case '|':
+		return '│'
+	case 'L':
+		return '└'
+	case 'J':
+		return '┘'
+	case '.':
+		return ' '
+	case 'S':
+		return 'S'
+	default:
+		panic("Unknown char " + string(char))
+	}
+}
+
+func createPath(lines []string, start Pos, startDirs []Pos) [][]rune {
+	mmap := make([][]rune, len(lines))
+	for y, line := range lines {
+		mmap[y] = make([]rune, len(line))
+		for x := range line {
+			mmap[y][x] = ' '
+		}
+	}
+	pos := start
+	dir := startDirs[0]
+	mmap[pos.y][pos.x] = 'S'
+	for {
+		pos = pos.Add(dir)
+		if pos == start {
+			break
+		}
+		mmap[pos.y][pos.x] = getLineChar(rune(lines[pos.y][pos.x]))
+		dir = pos.GetNext(dir, lines)
+	}
+	return mmap
 }
 
 func part2(lines []string) {
-	fmt.Println("Part 2:")
+	start := findStart(lines)
+
+	// find connections
+	startDirs := findStartDirections(lines, start)
+	if len(startDirs) != 2 {
+		panic("Start has to have 2 directions")
+	}
+
+	// create the path
+	mmap := createPath(lines, start, startDirs)
+
+	// mark left/right sides
+	pos := start
+	dir := startDirs[0]
+	for {
+		fill(mmap, pos.Add(dir.turnLeft()), ' ', '<')
+		fill(mmap, pos.Add(dir.turnRight()), ' ', '>')
+		pos = pos.Add(dir)
+		fill(mmap, pos.Add(dir.turnLeft()), ' ', '<')
+		fill(mmap, pos.Add(dir.turnRight()), ' ', '>')
+		if pos == start {
+			break
+		}
+		mmap[pos.y][pos.x] = getLineChar(rune(lines[pos.y][pos.x]))
+		dir = pos.GetNext(dir, lines)
+	}
+
+	// count charInside
+	charInside := '>'
+	charOutside := '<'
+	if mmap[0][0] == '>' {
+		charInside = '<'
+		charOutside = '>'
+	}
+	var inside, outside, nonMarked int
+	for y, line := range mmap {
+		for x, char := range line {
+			switch char {
+			case charInside:
+				inside++
+				mmap[y][x] = '#'
+			case charOutside:
+				outside++
+				mmap[y][x] = ' '
+			case ' ':
+				nonMarked++
+				mmap[y][x] = 'X'
+			}
+		}
+	}
+	plot(mmap)
+	if nonMarked != 0 {
+		panic(fmt.Sprint("Non marked:", nonMarked))
+	}
+
+	fmt.Println("Part 2:", inside)
+}
+
+func (dir Pos) turnLeft() Pos {
+	switch dir {
+	case Up:
+		return Left
+	case Left:
+		return Down
+	case Down:
+		return Right
+	case Right:
+		return Up
+	default:
+		panic("Unknown dir")
+	}
+}
+
+func (dir Pos) turnRight() Pos {
+	switch dir {
+	case Up:
+		return Right
+	case Right:
+		return Down
+	case Down:
+		return Left
+	case Left:
+		return Up
+	default:
+		panic("Unknown dir")
+	}
+}
+
+func fill(mmap [][]rune, pos Pos, from, to rune) {
+	if pos.x < 0 || pos.x >= len(mmap[0]) || pos.y < 0 || pos.y >= len(mmap) {
+		return
+	}
+	if mmap[pos.y][pos.x] != from {
+		return
+	}
+	mmap[pos.y][pos.x] = to
+	fill(mmap, pos.Add(Up), from, to)
+	fill(mmap, pos.Add(Down), from, to)
+	fill(mmap, pos.Add(Left), from, to)
+	fill(mmap, pos.Add(Right), from, to)
+}
+
+func plot(mmap [][]rune) {
+	if !PLOT {
+		return
+	}
+	for _, line := range mmap {
+		fmt.Println(string(line))
+	}
+	fmt.Println()
 }
