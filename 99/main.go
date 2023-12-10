@@ -30,7 +30,10 @@ func part1(lines []string) {
 	for _, line := range lines {
 		fmt.Println(line)
 	}
+
+	fmt.Println("Part 1:")
 }
 
 func part2(lines []string) {
+	fmt.Println("Part 2:")
 }
