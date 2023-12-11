@@ -26,18 +26,25 @@ func main() {
 	part2(lines)
 }
 
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 type Pos struct {
 	x, y int
 }
 
-func part1(lines []string) {
+func getExpandedUniverse(lines []string, expand int) []Pos {
 	expY := make([]int, len(lines))
 	expX := make([]int, len(lines[0]))
 	for x := range expX {
-		expX[x] = 1
+		expX[x] = expand - 1
 	}
 	for y := range expY {
-		expY[y] = 1
+		expY[y] = expand - 1
 	}
 
 	var galaxies []Pos
@@ -59,6 +66,11 @@ func part1(lines []string) {
 	for i, g := range galaxies {
 		galaxies[i] = Pos{g.x + expX[g.x], g.y + expY[g.y]}
 	}
+	return galaxies
+}
+
+func part1(lines []string) {
+	galaxies := getExpandedUniverse(lines, 2)
 
 	var sum int
 	for i, g1 := range galaxies[1:] {
@@ -70,13 +82,15 @@ func part1(lines []string) {
 	fmt.Println("Part 1:", sum)
 }
 
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func part2(lines []string) {
-	fmt.Println("Part 2:")
+	galaxies := getExpandedUniverse(lines, 1e6)
+
+	var sum int
+	for i, g1 := range galaxies[1:] {
+		for _, g2 := range galaxies[:i+1] {
+			dist := abs(g1.x-g2.x) + abs(g1.y-g2.y)
+			sum += dist
+		}
+	}
+	fmt.Println("Part 2:", sum)
 }
