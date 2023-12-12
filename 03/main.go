@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -32,6 +33,7 @@ type pos struct {
 }
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	used := map[pos]bool{}
 	var sum int
 
@@ -92,10 +94,11 @@ func part1(lines []string) {
 			}
 		}
 	}
-	fmt.Println(sum)
+	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	var sum int
 	used := map[pos]bool{}
 
@@ -164,5 +167,5 @@ func part2(lines []string) {
 			}
 		}
 	}
-	fmt.Println(sum)
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }

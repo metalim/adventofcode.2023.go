@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 const PLOT = true
@@ -114,21 +115,22 @@ func (pos Pos) GetNext(moveDir Pos, lines []string) Pos {
 }
 
 func part1(lines []string) {
-	start := findStart(lines)
+	timeStart := time.Now()
+	posStart := findStart(lines)
 
 	// find connections
-	startDirs := findStartDirections(lines, start)
+	startDirs := findStartDirections(lines, posStart)
 	if len(startDirs) != 2 {
 		panic("Start has to have 2 directions")
 	}
 
 	var steps int
-	pos := start
+	pos := posStart
 	dir := startDirs[0]
 	for {
 		pos = pos.Add(dir)
 		steps++
-		if pos == start {
+		if pos == posStart {
 			break
 		}
 		dir = pos.GetNext(dir, lines)
@@ -136,7 +138,7 @@ func part1(lines []string) {
 	if steps%2 != 0 {
 		panic("Steps has to be even")
 	}
-	fmt.Println("Part 1:", steps/2)
+	fmt.Println("Part 1:", steps/2, "\tin", time.Since(timeStart))
 }
 
 func getLineChar(char rune) rune {
@@ -191,19 +193,20 @@ func createPath(lines []string, start Pos, startDirs []Pos) [][]rune {
 }
 
 func part2(lines []string) {
-	start := findStart(lines)
+	timeStart := time.Now()
+	posStart := findStart(lines)
 
 	// find connections
-	startDirs := findStartDirections(lines, start)
+	startDirs := findStartDirections(lines, posStart)
 	if len(startDirs) != 2 {
 		panic("Start has to have 2 directions")
 	}
 
 	// create the path
-	mmap := createPath(lines, start, startDirs)
+	mmap := createPath(lines, posStart, startDirs)
 
 	// mark left/right sides
-	pos := start
+	pos := posStart
 	dir := startDirs[0]
 	for {
 		fill(mmap, pos.Add(dir.turnLeft()), ' ', '<')
@@ -211,7 +214,7 @@ func part2(lines []string) {
 		pos = pos.Add(dir)
 		fill(mmap, pos.Add(dir.turnLeft()), ' ', '<')
 		fill(mmap, pos.Add(dir.turnRight()), ' ', '>')
-		if pos == start {
+		if pos == posStart {
 			break
 		}
 		mmap[pos.y][pos.x] = getLineChar(rune(lines[pos.y][pos.x]))
@@ -246,7 +249,7 @@ func part2(lines []string) {
 		panic(fmt.Sprint("Non marked:", nonMarked))
 	}
 
-	fmt.Println("Part 2:", inside)
+	fmt.Println("Part 2:", inside, "\tin", time.Since(timeStart))
 }
 
 func (dir Pos) turnLeft() Pos {

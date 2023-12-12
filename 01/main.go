@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -27,6 +28,7 @@ func main() {
 }
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	var sum int
 	for _, line := range lines {
 		var digits, first, last int
@@ -42,10 +44,11 @@ func part1(lines []string) {
 		}
 		sum += first*10 + last
 	}
-	fmt.Println(sum)
+	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	var sum int
 	for _, line := range lines {
 		var digits, first, last int
@@ -62,7 +65,7 @@ func part2(lines []string) {
 		}
 		sum += first*10 + last
 	}
-	fmt.Println(sum)
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }
 
 func getDigit(s string) (int, bool) {

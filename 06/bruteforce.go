@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func part2brute(lines []string) {
@@ -14,6 +15,7 @@ func part2brute(lines []string) {
 	distance, err := strconv.Atoi(distanceStr)
 	catch(err)
 
+	start := time.Now()
 	var won int
 	for speed := 0; speed <= maxTime; speed++ {
 		if speed*(maxTime-speed) > distance {
@@ -21,5 +23,5 @@ func part2brute(lines []string) {
 		}
 	}
 
-	fmt.Println("Part 2:", won)
+	fmt.Println("Part 2:", won, "\tby brute force in", time.Since(start))
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Range struct {
@@ -12,6 +13,7 @@ type Range struct {
 const MaxInt = 1<<63 - 1
 
 func part2ranges(lines []string) {
+	timeStart := time.Now()
 	seeds := toInts(strings.Fields(reSeeds.FindStringSubmatch(lines[0])[1]))
 	maps := parseMaps(lines[1:])
 
@@ -24,7 +26,7 @@ func part2ranges(lines []string) {
 			closest = pos
 		}
 	}
-	fmt.Println(closest)
+	fmt.Println("Part 2:", closest, "\tin", time.Since(timeStart))
 }
 
 func closestInRange(r Range, maps [][][]int) int {

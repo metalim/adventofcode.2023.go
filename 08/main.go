@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -42,6 +43,7 @@ func parseRoutes(lines []string) map[string][2]string {
 }
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	path := lines[0]
 	routes := parseRoutes(lines[2:])
 
@@ -73,7 +75,7 @@ func part1(lines []string) {
 			i = 0
 		}
 	}
-	fmt.Println("Part 1:", steps)
+	fmt.Println("Part 1:", steps, "\tin", time.Since(timeStart))
 }
 
 type Path struct {
@@ -88,6 +90,7 @@ type Path struct {
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	dirs := lines[0]
 	routes := parseRoutes(lines[2:])
 
@@ -157,7 +160,7 @@ func part2(lines []string) {
 	for i, p := range paths {
 		nums[i] = p.EndPos
 	}
-	fmt.Println("Part 2:", lcm(nums...))
+	fmt.Println("Part 2:", lcm(nums...), "\tin", time.Since(timeStart))
 }
 
 func gcd(nums ...int) int {

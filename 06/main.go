@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -34,13 +35,15 @@ func main() {
 	lines := strings.Split(string(bs), "\n")
 
 	part1(lines)
-	// part2brute(lines)
+	part2brute(lines)
 	part2math(lines)
 }
 
 func part1(lines []string) {
 	times := toInts(strings.Fields(lines[0])[1:])
 	distances := toInts(strings.Fields(lines[1])[1:])
+
+	start := time.Now()
 	mul := 1
 	for i, maxTime := range times {
 		var won int
@@ -51,5 +54,5 @@ func part1(lines []string) {
 		}
 		mul *= won
 	}
-	fmt.Println("Part 1:", mul)
+	fmt.Println("Part 1:", mul, "\tby brute force in", time.Since(start))
 }

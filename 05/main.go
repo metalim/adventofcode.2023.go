@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -25,7 +26,7 @@ func main() {
 	lines := strings.Split(string(bs), "\n")
 
 	part1(lines)
-	// part2brute(lines)
+	// part2brute(lines) // takes 1m30s
 	part2ranges(lines)
 }
 
@@ -82,6 +83,7 @@ func convert(val int, maps [][][]int) int {
 }
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	strSeeds := reSeeds.FindStringSubmatch(lines[0])[1]
 	seeds := toInts(strings.Fields(strSeeds))
 
@@ -94,5 +96,5 @@ func part1(lines []string) {
 			closest = val
 		}
 	}
-	fmt.Println(closest)
+	fmt.Println("Part 1:", closest, "\tin", time.Since(timeStart))
 }

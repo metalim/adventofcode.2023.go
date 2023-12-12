@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -99,6 +100,7 @@ func getType(cards []Label) Type {
 }
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	hands := make([]*Hand, len(lines))
 	for i, line := range lines {
 		hands[i] = parseHand(line)
@@ -121,7 +123,7 @@ func part1(lines []string) {
 		sum += hand.bid * (i + 1)
 	}
 
-	fmt.Println("Part 1:", sum)
+	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
 func parseHandJ(line string) *Hand {
@@ -178,6 +180,7 @@ func getTypeJ(cards []Label) Type {
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	hands := make([]*Hand, len(lines))
 	for i, line := range lines {
 		hands[i] = parseHandJ(line)
@@ -200,5 +203,5 @@ func part2(lines []string) {
 		sum += hand.bid * (i + 1)
 	}
 
-	fmt.Println("Part 2:", sum)
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }

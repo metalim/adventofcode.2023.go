@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -70,6 +71,7 @@ func getExpandedUniverse(lines []string, expand int) []Pos {
 }
 
 func part1(lines []string) {
+	start := time.Now()
 	galaxies := getExpandedUniverse(lines, 2)
 
 	var sum int
@@ -79,10 +81,11 @@ func part1(lines []string) {
 			sum += dist
 		}
 	}
-	fmt.Println("Part 1:", sum)
+	fmt.Println("Part 1:", sum, "\tin", time.Since(start))
 }
 
 func part2(lines []string) {
+	start := time.Now()
 	galaxies := getExpandedUniverse(lines, 1e6)
 
 	var sum int
@@ -92,5 +95,5 @@ func part2(lines []string) {
 			sum += dist
 		}
 	}
-	fmt.Println("Part 2:", sum)
+	fmt.Println("Part 2:", sum, "\tin", time.Since(start))
 }

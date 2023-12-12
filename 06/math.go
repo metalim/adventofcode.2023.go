@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func part2math(lines []string) {
@@ -14,6 +15,7 @@ func part2math(lines []string) {
 	catch(err)
 	distance, err := strconv.Atoi(distanceStr)
 	catch(err)
+	start := time.Now()
 
 	// X*(maxTime-X) = distance
 	// X*X - X*maxTime + distance = 0
@@ -21,6 +23,6 @@ func part2math(lines []string) {
 	sqrtD := math.Sqrt(float64(maxTime*maxTime - 4*distance))
 	speedMin := int(math.Ceil((float64(maxTime) - sqrtD) / 2))
 	speedMax := int(math.Floor((float64(maxTime) + sqrtD) / 2))
-	fmt.Println("Part 2:", speedMax-speedMin+1)
+	fmt.Println("Part 2:", speedMax-speedMin+1, "\tby math in", time.Since(start))
 
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -27,13 +28,19 @@ func main() {
 }
 
 func part1(lines []string) {
+	start := time.Now()
 	for _, line := range lines {
 		fmt.Println(line)
 	}
 
-	fmt.Println("Part 1:")
+	fmt.Println("Part 1:", "\tin", time.Since(start))
 }
 
 func part2(lines []string) {
-	fmt.Println("Part 2:")
+	start := time.Now()
+	for _, line := range lines {
+		_ = line
+	}
+
+	fmt.Println("Part 2:", "\tin", time.Since(start))
 }

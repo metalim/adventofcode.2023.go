@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -40,6 +41,7 @@ var (
 )
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	var idSum int
 
 	for _, line := range lines {
@@ -54,7 +56,7 @@ func part1(lines []string) {
 			idSum += gameID
 		}
 	}
-	fmt.Println(idSum)
+	fmt.Println("Part 1:", idSum, "\tin", time.Since(timeStart))
 }
 
 func isValidGame(game string) bool {
@@ -73,6 +75,7 @@ func isValidGame(game string) bool {
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	var sumPower int
 
 	for _, line := range lines {
@@ -83,7 +86,7 @@ func part2(lines []string) {
 		game := reGame.FindStringSubmatch(line)
 		sumPower += getGamePower(game[2])
 	}
-	fmt.Println(sumPower)
+	fmt.Println("Part 2:", sumPower, "\tin", time.Since(timeStart))
 }
 
 func getGamePower(game string) int {

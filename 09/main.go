@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -38,13 +39,14 @@ func next(nums []int) int {
 }
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	var sum int
 	for _, line := range lines {
 		row := toInts(strings.Fields(line))
 		sum += next(row)
 	}
 
-	fmt.Println("Part 1:", sum)
+	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
 func getSubs(nums []int) (subs []int, nonZero bool) {
@@ -71,11 +73,12 @@ func prev(nums []int) int {
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	var sum int
 	for _, line := range lines {
 		row := toInts(strings.Fields(line))
 		sum += prev(row)
 	}
 
-	fmt.Println("Part 2:", sum)
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }

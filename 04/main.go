@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func catch(err error) {
@@ -31,6 +32,7 @@ func main() {
 var reCard = regexp.MustCompile(`^Card\s+(\d+):(.*)\|(.*)$`)
 
 func part1(lines []string) {
+	timeStart := time.Now()
 	var sum int
 	for _, line := range lines {
 		if line == "" {
@@ -61,10 +63,11 @@ func part1(lines []string) {
 		sum += points
 	}
 
-	fmt.Println(sum)
+	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
 func part2(lines []string) {
+	timeStart := time.Now()
 	var total int
 	copies := map[int]int{}
 
@@ -101,5 +104,5 @@ func part2(lines []string) {
 			points--
 		}
 	}
-	fmt.Println(total)
+	fmt.Println("Part 2:", total, "\tin", time.Since(timeStart))
 }
