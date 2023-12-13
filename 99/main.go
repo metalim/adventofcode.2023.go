@@ -28,19 +28,19 @@ func main() {
 }
 
 func part1(lines []string) {
-	start := time.Now()
+	timeStart := time.Now()
 	for _, line := range lines {
 		fmt.Println(line)
 	}
 
-	fmt.Println("Part 1:", "\tin", time.Since(start))
+	fmt.Println("Part 1:", "\tin", time.Since(timeStart))
 }
 
 func part2(lines []string) {
-	start := time.Now()
+	timeStart := time.Now()
 	for _, line := range lines {
 		_ = line
 	}
 
-	fmt.Println("Part 2:", "\tin", time.Since(start))
+	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
 }
