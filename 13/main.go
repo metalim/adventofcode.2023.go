@@ -27,7 +27,7 @@ func main() {
 	part2(lines)
 }
 
-func sumReflection(lines []string) int {
+func sumRowsReflections(lines []string) int {
 	var sum int
 	for i := range lines {
 		up := i
@@ -44,34 +44,24 @@ func sumReflection(lines []string) int {
 			down++
 		}
 		if reflection && rows > 0 {
-			sum += (i + 1) * 100
-		}
-	}
-
-	for i := range lines[0] {
-		left := i
-		right := i + 1
-		reflection := true
-		var cols int
-		for left >= 0 && right < len(lines[0]) {
-			for _, line := range lines {
-				if line[left] != line[right] {
-					reflection = false
-					break
-				}
-			}
-			if !reflection {
-				break
-			}
-			cols++
-			left--
-			right++
-		}
-		if reflection && cols > 0 {
 			sum += i + 1
 		}
 	}
 	return sum
+}
+
+func transpose(lines []string) []string {
+	out := make([]string, len(lines[0]))
+	for i := range out {
+		for _, line := range lines {
+			out[i] += string(line[i])
+		}
+	}
+	return out
+}
+
+func sumReflections(lines []string) int {
+	return sumRowsReflections(lines)*100 + sumRowsReflections(transpose(lines))
 }
 
 func part1(lines []string) {
@@ -79,20 +69,64 @@ func part1(lines []string) {
 	var start, sum int
 	for i, line := range lines {
 		if line == "" {
-			sum += sumReflection(lines[start:i])
+			sum += sumReflections(lines[start:i])
 			start = i + 1
 		}
 	}
-	sum += sumReflection(lines[start:])
+	sum += sumReflections(lines[start:])
 
 	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
+func getDiff(a, b string) int {
+	var diff int
+	for i := range a {
+		if a[i] != b[i] {
+			diff++
+		}
+	}
+	return diff
+}
+
+func sumRowsReflectionsSmudged(lines []string) int {
+	var sum int
+	for i := range lines {
+		up := i
+		down := i + 1
+		reflection := true
+		var rows, smudges int
+		for up >= 0 && down < len(lines) {
+			smudges += getDiff(lines[up], lines[down])
+			if smudges > 1 {
+				reflection = false
+				break
+			}
+			rows++
+			up--
+			down++
+		}
+		if reflection && rows > 0 && smudges == 1 {
+			sum += i + 1
+		}
+	}
+	return sum
+}
+
+func sumReflectionsSmudged(lines []string) int {
+	return sumRowsReflectionsSmudged(lines)*100 + sumRowsReflectionsSmudged(transpose(lines))
+}
+
 func part2(lines []string) {
 	timeStart := time.Now()
-	for _, line := range lines {
-		_ = line
+	var start, sum int
+	_ = start
+	for i, line := range lines {
+		if line == "" {
+			sum += sumReflectionsSmudged(lines[start:i])
+			start = i + 1
+		}
 	}
+	sum += sumReflectionsSmudged(lines[start:])
 
-	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }
