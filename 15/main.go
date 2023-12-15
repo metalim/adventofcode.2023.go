@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -47,11 +48,58 @@ func part1(lines []string) {
 	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
+type Lens struct {
+	Label string
+	Value int
+}
+
+type Hashmap [][]Lens
+
+func (h Hashmap) Set(label string, value int) {
+	i := HASH(label)
+	for j, lens := range h[i] {
+		if lens.Label == label {
+			h[i][j].Value = value
+			return
+		}
+	}
+	h[i] = append(h[i], Lens{label, value})
+}
+
+func (h Hashmap) Delete(label string) {
+	i := HASH(label)
+	for j, lens := range h[i] {
+		if lens.Label == label {
+			h[i] = append(h[i][:j], h[i][j+1:]...)
+			return
+		}
+	}
+}
+
 func part2(lines []string) {
 	timeStart := time.Now()
+
+	hashmap := make(Hashmap, 256)
 	for _, line := range lines {
-		_ = line
+		for _, s := range strings.Split(line, ",") {
+			if strings.HasSuffix(s, "-") {
+				label := s[:len(s)-1]
+				hashmap.Delete(label)
+			} else {
+				ss := strings.Split(s, "=")
+				label := ss[0]
+				value, err := strconv.Atoi(ss[1])
+				catch(err)
+				hashmap.Set(label, value)
+			}
+		}
 	}
 
-	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
+	var sum int
+	for box, lens := range hashmap {
+		for slot, l := range lens {
+			sum += (box + 1) * (slot + 1) * l.Value
+		}
+	}
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }
