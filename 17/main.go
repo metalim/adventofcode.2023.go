@@ -76,7 +76,7 @@ func part2(lines []string) {
 func findMinLoss(lines []string, minSteps, maxSteps int) Loss {
 	visited := make(map[PosDir]Loss)
 
-	next := []Crucible{{PosDir{Pos{0, 0}, Right, 0}, 0}}
+	next := []Crucible{{PosDir{Pos{0, 0}, Right, 0}, 0}, {PosDir{Pos{0, 0}, Down, 0}, 0}}
 	var current []Crucible
 	var exit bool
 	for !exit {
