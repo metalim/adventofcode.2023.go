@@ -45,15 +45,8 @@ type Beam struct {
 	dir Dir
 }
 
-func part1(lines []string) {
-	timeStart := time.Now()
-
-	grid := make([][]byte, len(lines))
-	for i, line := range lines {
-		grid[i] = []byte(line)
-	}
-
-	beams := []Beam{{Pos{0, 0}, Right}}
+func traverse(lines []string, startBeam Beam) int {
+	beams := []Beam{startBeam}
 	var next []Beam
 	visited := map[Beam]bool{}
 	cells := map[Pos]bool{}
@@ -95,15 +88,28 @@ func part1(lines []string) {
 
 		beams, next = next, beams[:0]
 	}
+	return len(cells)
+}
 
-	fmt.Println("Part 1:", len(cells), "\tin", time.Since(timeStart))
+func part1(lines []string) {
+	timeStart := time.Now()
+	energized := traverse(lines, Beam{Pos{0, 0}, Right})
+	fmt.Println("Part 1:", energized, "\tin", time.Since(timeStart))
 }
 
 func part2(lines []string) {
 	timeStart := time.Now()
-	for _, line := range lines {
-		_ = line
+	var maxEnergized int
+	for y := 0; y < len(lines); y++ {
+		energized1 := traverse(lines, Beam{Pos{0, y}, Right})
+		energized2 := traverse(lines, Beam{Pos{len(lines[0]) - 1, y}, Left})
+		maxEnergized = max(maxEnergized, energized1, energized2)
+	}
+	for x := 0; x < len(lines[0]); x++ {
+		energized1 := traverse(lines, Beam{Pos{x, 0}, Down})
+		energized2 := traverse(lines, Beam{Pos{x, len(lines) - 1}, Up})
+		maxEnergized = max(maxEnergized, energized1, energized2)
 	}
 
-	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
+	fmt.Println("Part 2:", maxEnergized, "\tin", time.Since(timeStart))
 }
