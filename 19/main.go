@@ -143,11 +143,44 @@ func part1(lines []string) {
 	fmt.Println("Part 1:", sum, "\tin", time.Since(timeStart))
 }
 
-func part2(lines []string) {
-	timeStart := time.Now()
-	for _, line := range lines {
-		_ = line
+type Range [4][2]int
+
+func (w Workflows) countAccepted(state string, index int, rang Range) int {
+	if state == "R" {
+		return 0
 	}
 
-	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
+	if state == "A" {
+		mul := 1
+		for _, r := range rang {
+			mul *= r[1] - r[0] + 1
+		}
+		return mul
+	}
+
+	step := w[state][index]
+	switch {
+	case step.name == -1:
+		return w.countAccepted(step.out, 0, rang)
+	case step.cond == "<":
+		r1, r2 := rang, rang
+		r1[step.name][1] = step.val - 1
+		r2[step.name][0] = step.val
+		return w.countAccepted(step.out, 0, r1) + w.countAccepted(state, index+1, r2)
+	case step.cond == ">":
+		r1, r2 := rang, rang
+		r1[step.name][0] = step.val + 1
+		r2[step.name][1] = step.val
+		return w.countAccepted(step.out, 0, r1) + w.countAccepted(state, index+1, r2)
+	}
+
+	panic("not implemented")
+}
+
+func part2(lines []string) {
+	timeStart := time.Now()
+	workflows, _ := parse(lines)
+
+	sum := workflows.countAccepted("in", 0, Range{{1, 4000}, {1, 4000}, {1, 4000}, {1, 4000}})
+	fmt.Println("Part 2:", sum, "\tin", time.Since(timeStart))
 }
