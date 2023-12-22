@@ -79,9 +79,11 @@ func part1(lines []string) {
 
 func part2(lines []string) {
 	timeStart := time.Now()
-	for _, line := range lines {
-		_ = line
-	}
-
-	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
+	start := findStart(lines)
+	next := []Pos{start}
+	visited := map[Pos]bool{start: true}
+	var cur []Pos
+	_, _, _ = cur, next, visited
+	var count int
+	fmt.Println("Part 2:", count, "\tin", time.Since(timeStart))
 }
