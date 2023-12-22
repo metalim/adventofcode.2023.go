@@ -33,7 +33,7 @@ func part1(lines []string) {
 		fmt.Println(line)
 	}
 
-	fmt.Println("Part 1:", "\tin", time.Since(timeStart))
+	fmt.Printf("Part 1: \tin %v\n", time.Since(timeStart))
 }
 
 func part2(lines []string) {
@@ -42,5 +42,5 @@ func part2(lines []string) {
 		_ = line
 	}
 
-	fmt.Println("Part 2:", "\tin", time.Since(timeStart))
+	fmt.Printf("Part 2: \tin %v\n", time.Since(timeStart))
 }
