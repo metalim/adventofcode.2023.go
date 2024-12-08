@@ -21,10 +21,18 @@ func main() {
 
 	bs, err := os.ReadFile(os.Args[1])
 	catch(err)
-	lines := strings.Split(string(bs), "\n")
 
-	part1(lines)
-	part2(lines)
+	input := parseInput(string(bs))
+	part1(input)
+	part2(input)
+}
+
+func parseInput(input string) []string {
+	lines := strings.Split(input, "\n")
+	if len(lines[len(lines)-1]) == 0 {
+		lines = lines[:len(lines)-1]
+	}
+	return lines
 }
 
 func part1(lines []string) {
@@ -33,7 +41,7 @@ func part1(lines []string) {
 		fmt.Println(line)
 	}
 
-	fmt.Printf("Part 1: \tin %v\n", time.Since(timeStart))
+	fmt.Printf("Part 1: \t\tin %v\n", time.Since(timeStart))
 }
 
 func part2(lines []string) {
@@ -42,5 +50,5 @@ func part2(lines []string) {
 		_ = line
 	}
 
-	fmt.Printf("Part 2: \tin %v\n", time.Since(timeStart))
+	fmt.Printf("Part 2: \t\tin %v\n", time.Since(timeStart))
 }

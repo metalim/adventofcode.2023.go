@@ -1,0 +1,7 @@
+digraph aoc {
+	"broadcaster" -> "a%";
+	"a%" -> "inv&", "con&";
+	"b%" -> "con&";
+	"con&" -> "output?";
+	"inv&" -> "b%";
+}
