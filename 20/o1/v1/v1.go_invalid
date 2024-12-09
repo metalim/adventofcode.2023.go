@@ -1,0 +1,349 @@
+// Напиши код на Go для решения следующей задачи. Входные данные в файле указываемом аргументом в командной строке.
+// Выведи время решения каждой части.
+
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+)
+
+type PulseType bool
+const (
+	Low  PulseType = false
+	High PulseType = true
+)
+
+type ModuleType int
+const (
+	Normal ModuleType = iota
+	FlipFlop
+	Conjunction
+	Broadcaster
+)
+
+type Module struct {
+	mtype       ModuleType
+	name        string
+	dest        []string
+	flipOn      bool               // for flip-flop
+	conInputs   map[string]PulseType // for conjunction: remember last pulse from each input
+	conInputList []string
+}
+
+// Process a pulse received by this module, return pulses to send further
+func (m *Module) receive(from string, p PulseType) []struct{name string; pulse PulseType} {
+	switch m.mtype {
+	case Broadcaster:
+		// Just resend the same pulse to all destinations
+		var out []struct{name string; pulse PulseType}
+		for _, d := range m.dest {
+			out = append(out, struct{name string; pulse PulseType}{d, p})
+		}
+		return out
+	case FlipFlop:
+		if p == High {
+			// Ignore if high
+			return nil
+		}
+		// p is low
+		m.flipOn = !m.flipOn
+		var outP PulseType
+		if m.flipOn { outP = High } else { outP = Low }
+		var out []struct{name string; pulse PulseType}
+		for _, d := range m.dest {
+			out = append(out, struct{name string; pulse PulseType}{d, outP})
+		}
+		return out
+	case Conjunction:
+		// Update memory
+		m.conInputs[from] = p
+		// Check if all high
+		allHigh := true
+		for _, in := range m.conInputList {
+			if m.conInputs[in] == Low {
+				allHigh = false
+				break
+			}
+		}
+		var outP PulseType
+		if allHigh {
+			outP = Low
+		} else {
+			outP = High
+		}
+		var out []struct{name string; pulse PulseType}
+		for _, d := range m.dest {
+			out = append(out, struct{name string; pulse PulseType}{d, outP})
+		}
+		return out
+	case Normal:
+		// Normal module just passes the pulse along
+		var out []struct{name string; pulse PulseType}
+		for _, d := range m.dest {
+			out = append(out, struct{name string; pulse PulseType}{d, p})
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run main.go <inputfile>")
+		return
+	}
+
+	inputFile := os.Args[1]
+	f, err := os.Open(inputFile)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer f.Close()
+
+	startPart1 := time.Now()
+	scanner := bufio.NewScanner(f)
+	modules := make(map[string]*Module)
+	inputLines := []string{}
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		inputLines = append(inputLines, line)
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	// Parse modules
+	// Format: [prefix]name -> dest1, dest2, ...
+	// prefix can be % or & or none
+	// special name: "broadcaster"
+	for _, line := range inputLines {
+		parts := strings.Split(line, "->")
+		left := strings.TrimSpace(parts[0])
+		right := ""
+		if len(parts) > 1 {
+			right = strings.TrimSpace(parts[1])
+		}
+
+		dests := []string{}
+		if right != "" {
+			for _, d := range strings.Split(right, ",") {
+				dests = append(dests, strings.TrimSpace(d))
+			}
+		}
+
+		var mtype ModuleType
+		name := left
+		if strings.HasPrefix(left, "%") {
+			mtype = FlipFlop
+			name = strings.TrimPrefix(left, "%")
+		} else if strings.HasPrefix(left, "&") {
+			mtype = Conjunction
+			name = strings.TrimPrefix(left, "&")
+		} else {
+			// normal or broadcaster
+			if left == "broadcaster" {
+				mtype = Broadcaster
+			} else {
+				mtype = Normal
+			}
+		}
+
+		modules[name] = &Module{
+			mtype:       mtype,
+			name:        name,
+			dest:        dests,
+			flipOn:      false,
+			conInputs:   make(map[string]PulseType),
+		}
+	}
+
+	// Build a reverse map of inputs for conjunction to track
+	// which modules feed into them, so we know initial memory
+	// Actually, we know all modules from the input lines. We'll just fill
+	// conInputs with defaults when done parsing all and we know them.
+	// Need to know inputs. We'll do by scanning all modules' destinations.
+	inputMap := make(map[string][]string) // module -> inputs feeding it
+	for src, mod := range modules {
+		for _, d := range mod.dest {
+			inputMap[d] = append(inputMap[d], src)
+		}
+	}
+
+	for _, mod := range modules {
+		if mod.mtype == Conjunction {
+			mod.conInputList = inputMap[mod.name]
+			for _, in := range mod.conInputList {
+				// initially all low
+				mod.conInputs[in] = Low
+			}
+		}
+	}
+
+	// Simulation
+	// Part 1: Press button 1000 times and count total pulses.
+	// Each button press:
+	//   send one low pulse to broadcaster
+	//   process until no more pulses
+	// Count how many low and high pulses in total
+	// After done, multiply lowCount * highCount
+
+	// We'll define a function to reset state:
+	reset := func() {
+		for _, mod := range modules {
+			mod.flipOn = false
+			if mod.mtype == Conjunction {
+				for _, in := range mod.conInputList {
+					mod.conInputs[in] = Low
+				}
+			}
+		}
+	}
+
+	var lowCount, highCount int
+	reset()
+
+	processPulses := func(pulses []struct{name string; pulse PulseType}) {
+		queue := pulses
+		for len(queue) > 0 {
+			p := queue[0]
+			queue = queue[1:]
+			// count
+			if p.pulse == Low {lowCount++} else {highCount++}
+
+			if p.name == "rx" {
+				// In part 1 we don't need rx, just counting pulses
+				// In part 2 we will handle differently
+			}
+			mod, ok := modules[p.name]
+			if !ok {
+				// no such module? ignore
+				continue
+			}
+			out := mod.receive(p.name /* actually from field: we don't know who sent it. 
+			                            Let's assume input module name doesn't matter for normal. 
+			                            For conjunction we need from. 
+			                            We'll just pass the from we used in inputMap: we must know who sent it.*/,
+			                     p.pulse)
+			// But we don't know who sent it. The puzzle states pulses processed in order they are sent.
+			// The 'from' argument we pass: The problem states "When a pulse is received from input modules"
+			// Actually we do know who sent it. It's in variable 'p' (struct does not store from).
+			// We need 'from' for conjunction. Let's store from in the queue item as well.
+			// We'll fix that by including a 'from' field.
+
+		}
+	}
+
+	// We need the sender name in each pulse, so let's redefine the pulse struct and re-run above logic.
+
+	type pulse struct {
+		from  string
+		to    string
+		ptype PulseType
+	}
+
+	// We'll redefine the code to handle pulses now:
+	sendPulse := func(from, to string, ptype PulseType) pulse {
+		return pulse{from: from, to: to, ptype: ptype}
+	}
+
+	runPulses := func(pulses []pulse) {
+		queue := pulses
+		for len(queue) > 0 {
+			p := queue[0]
+			queue = queue[1:]
+			if p.ptype == Low { lowCount++ } else { highCount++ }
+
+			if p.to == "rx" {
+				// Part 1 doesn't care
+			}
+			mod, ok := modules[p.to]
+			if !ok {
+				continue
+			}
+			out := mod.receive(p.from, p.ptype)
+			for _, o := range out {
+				queue = append(queue, pulse{from: mod.name, to: o.name, ptype: o.pulse})
+			}
+		}
+	}
+
+	// Button press
+	pressButton := func() {
+		// button sends low pulse to broadcaster
+		runPulses([]pulse{{from: "button", to: "broadcaster", ptype: Low}})
+	}
+
+	startPresses := time.Now()
+	for i := 0; i < 1000; i++ {
+		pressButton()
+	}
+	part1Low, part1High := lowCount, highCount
+	part1Answer := int64(part1Low) * int64(part1High)
+	endPart1 := time.Now()
+
+	// Part two
+	// Reset all modules
+	reset()
+	lowCount, highCount = 0, 0
+
+	// Now we press the button until 'rx' receives a low pulse.
+	// We must detect when 'rx' gets a low pulse.
+	// We'll modify runPulses for part two to stop when rx low is received.
+
+	buttonPresses := 0
+	found := false
+
+	runPulsesPart2 := func(pulses []pulse) bool {
+		queue := pulses
+		for len(queue) > 0 {
+			p := queue[0]
+			queue = queue[1:]
+			if p.ptype == Low { lowCount++ } else { highCount++ }
+
+			if p.to == "rx" && p.ptype == Low {
+				// Got low pulse to rx
+				return true
+			}
+			mod, ok := modules[p.to]
+			if !ok {
+				continue
+			}
+			out := mod.receive(p.from, p.ptype)
+			for _, o := range out {
+				queue = append(queue, pulse{from: mod.name, to: o.name, ptype: o.pulse})
+			}
+		}
+		return false
+	}
+
+	pressButtonPart2 := func() bool {
+		// button sends low pulse to broadcaster
+		return runPulsesPart2([]pulse{{from: "button", to: "broadcaster", ptype: Low}})
+	}
+
+	startPart2 := time.Now()
+	for !found {
+		buttonPresses++
+		if pressButtonPart2() {
+			found = true
+		}
+	}
+	endPart2 := time.Now()
+
+	// Output results:
+	fmt.Println("Part 1 Answer:", part1Answer)
+	fmt.Println("Part 2 Answer:", buttonPresses)
+	fmt.Println("Time Part 1:", endPart1.Sub(startPart1))
+	fmt.Println("Time Part 2:", endPart2.Sub(startPart2))
+	fmt.Println("Total Time:", time.Since(startPart1))
+}

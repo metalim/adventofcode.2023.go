@@ -1,0 +1,394 @@
+/*
+```
+➜ go run ./o1/v8 input1.txt
+Subsystem input dh: period=1, offset=1
+Subsystem input mk: period=1, offset=1
+Subsystem input rn: period=1, offset=1
+Subsystem input vf: period=1, offset=1
+```
+Что явно неверно. Ты опять заумничался. Не используй алгоритмы значения которых не понимаешь.
+Ты можешь найти цикл сохраняя состояние каждой ПОДСИСТЕМЫ в хешмапе. Не усложняй решение алгоритмами
+*/
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+)
+
+/*
+Требование:
+- Определить период и смещение для каждой подсистемы, ведущей к входам агрегатора, без "умных" алгоритмов,
+  просто сохраняя состояние в хешмапе, пока не найдём повтор.
+
+Подход:
+1. Находим broadcaster и aggregator.
+2. Для каждого входа aggregator:
+   - Сбрасываем систему.
+   - Создаём мапу: состояние системы -> номер шага.
+   - Состояние системы: состояние всех флип-флопов и conjunction-модулей.
+   - После каждого нажатия кнопки ждём стабилизации.
+   - Сохраняем сигнал для интересующего входа aggregator, а также текущее состояние системы.
+   - Если текущее состояние уже было, значит найден цикл.
+     offset = шаг первого появления этого состояния
+     period = текущий шаг - offset
+   - Период входного сигнала — это найденный period.
+   - Смещение offset — это offset.
+
+Выводим для каждого входа: имя входа, period, offset.
+
+Предполагаем, что памяти хватит и рано или поздно цикл найдётся.
+Никаких умных алгоритмов, просто перебор с HashMap.
+
+Состояние системы сериализуем как:
+"FF: flipName=0/1,...;CONJ: conjName=0101..."
+*/
+
+type PulseType bool
+
+const (
+	Low  PulseType = false
+	High PulseType = true
+)
+
+type ModuleType int
+
+const (
+	Normal ModuleType = iota
+	FlipFlop
+	Conjunction
+	Broadcaster
+)
+
+type Module struct {
+	mtype        ModuleType
+	name         string
+	dest         []string
+	flipOn       bool
+	conInputs    map[string]PulseType
+	conInputList []string
+}
+
+func (m *Module) receive(from string, p PulseType) []struct {
+	name  string
+	pulse PulseType
+} {
+	switch m.mtype {
+	case Broadcaster:
+		var out []struct {
+			name  string
+			pulse PulseType
+		}
+		for _, d := range m.dest {
+			out = append(out, struct {
+				name  string
+				pulse PulseType
+			}{d, p})
+		}
+		return out
+	case FlipFlop:
+		if p == High {
+			return nil
+		}
+		m.flipOn = !m.flipOn
+		var outP PulseType
+		if m.flipOn {
+			outP = High
+		} else {
+			outP = Low
+		}
+		var out []struct {
+			name  string
+			pulse PulseType
+		}
+		for _, d := range m.dest {
+			out = append(out, struct {
+				name  string
+				pulse PulseType
+			}{d, outP})
+		}
+		return out
+	case Conjunction:
+		m.conInputs[from] = p
+		allHigh := true
+		for _, in := range m.conInputList {
+			if m.conInputs[in] == Low {
+				allHigh = false
+				break
+			}
+		}
+		var outP PulseType
+		if allHigh {
+			outP = Low
+		} else {
+			outP = High
+		}
+		var out []struct {
+			name  string
+			pulse PulseType
+		}
+		for _, d := range m.dest {
+			out = append(out, struct {
+				name  string
+				pulse PulseType
+			}{d, outP})
+		}
+		return out
+	case Normal:
+		var out []struct {
+			name  string
+			pulse PulseType
+		}
+		for _, d := range m.dest {
+			out = append(out, struct {
+				name  string
+				pulse PulseType
+			}{d, p})
+		}
+		return out
+	}
+	return nil
+}
+
+func reset(modules map[string]*Module) {
+	for _, mod := range modules {
+		mod.flipOn = false
+		if mod.mtype == Conjunction {
+			for _, in := range mod.conInputList {
+				mod.conInputs[in] = Low
+			}
+		}
+	}
+}
+
+type pulseEvent struct {
+	from, to string
+	ptype    PulseType
+}
+
+func runAllPulses(modules map[string]*Module, pulses []pulseEvent) {
+	queue := pulses
+	for len(queue) > 0 {
+		p := queue[0]
+		queue = queue[1:]
+		mod, ok := modules[p.to]
+		if !ok {
+			continue
+		}
+		out := mod.receive(p.from, p.ptype)
+		for _, o := range out {
+			queue = append(queue, pulseEvent{from: mod.name, to: o.name, ptype: o.pulse})
+		}
+	}
+}
+
+func pressButton(modules map[string]*Module) {
+	runAllPulses(modules, []pulseEvent{{from: "button", to: "broadcaster", ptype: Low}})
+}
+
+func getCurrentState(modules map[string]*Module) string {
+	var ffNames []string
+	var conjNames []string
+	ffMap := make(map[string]bool)
+	conjMap := make(map[string][]PulseType)
+
+	for n, m := range modules {
+		if m.mtype == FlipFlop {
+			ffMap[n] = m.flipOn
+			ffNames = append(ffNames, n)
+		}
+		if m.mtype == Conjunction {
+			conjMap[n] = make([]PulseType, len(m.conInputList))
+			for i, inp := range m.conInputList {
+				conjMap[n][i] = m.conInputs[inp]
+			}
+			conjNames = append(conjNames, n)
+		}
+	}
+	sort.Strings(ffNames)
+	sort.Strings(conjNames)
+
+	sb := strings.Builder{}
+	sb.WriteString("FF:")
+	for _, n := range ffNames {
+		if ffMap[n] {
+			sb.WriteString(n + "=1,")
+		} else {
+			sb.WriteString(n + "=0,")
+		}
+	}
+	sb.WriteString(";CONJ:")
+	for _, n := range conjNames {
+		sb.WriteString(n + "=")
+		for _, v := range conjMap[n] {
+			if v == High {
+				sb.WriteByte('1')
+			} else {
+				sb.WriteByte('0')
+			}
+		}
+		sb.WriteByte(',')
+	}
+	return sb.String()
+}
+
+func findBroadcaster(modules map[string]*Module) string {
+	for n, m := range modules {
+		if m.mtype == Broadcaster {
+			return n
+		}
+	}
+	return ""
+}
+
+func findAggregator(modules map[string]*Module) string {
+	for n, m := range modules {
+		for _, d := range m.dest {
+			if d == "rx" && m.mtype == Conjunction {
+				return n
+			}
+		}
+	}
+	return ""
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run main.go <inputfile>")
+		return
+	}
+	inputFile := os.Args[1]
+	f, err := os.Open(inputFile)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	modules := make(map[string]*Module)
+	var lines []string
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	for _, line := range lines {
+		parts := strings.Split(line, "->")
+		left := strings.TrimSpace(parts[0])
+		right := ""
+		if len(parts) > 1 {
+			right = strings.TrimSpace(parts[1])
+		}
+		var dests []string
+		if right != "" {
+			for _, d := range strings.Split(right, ",") {
+				dests = append(dests, strings.TrimSpace(d))
+			}
+		}
+		var mtype ModuleType
+		name := left
+		if strings.HasPrefix(left, "%") {
+			mtype = FlipFlop
+			name = strings.TrimPrefix(left, "%")
+		} else if strings.HasPrefix(left, "&") {
+			mtype = Conjunction
+			name = strings.TrimPrefix(left, "&")
+		} else {
+			if left == "broadcaster" {
+				mtype = Broadcaster
+			} else {
+				mtype = Normal
+			}
+		}
+		modules[name] = &Module{mtype: mtype, name: name, dest: dests, conInputs: make(map[string]PulseType)}
+	}
+
+	inputMap := make(map[string][]string)
+	for src, mod := range modules {
+		for _, d := range mod.dest {
+			inputMap[d] = append(inputMap[d], src)
+		}
+	}
+	for _, mod := range modules {
+		if mod.mtype == Conjunction {
+			mod.conInputList = inputMap[mod.name]
+			sort.Strings(mod.conInputList)
+			for _, in := range mod.conInputList {
+				mod.conInputs[in] = Low
+			}
+		}
+	}
+
+	broad := findBroadcaster(modules)
+	if broad == "" {
+		fmt.Println("No broadcaster found")
+		return
+	}
+
+	aggregator := findAggregator(modules)
+	if aggregator == "" {
+		fmt.Println("No aggregator found")
+		return
+	}
+	aggMod := modules[aggregator]
+	if aggMod.mtype != Conjunction {
+		fmt.Println("Aggregator is not a conjunction")
+		return
+	}
+	rxFound := false
+	for _, d := range aggMod.dest {
+		if d == "rx" {
+			rxFound = true
+			break
+		}
+	}
+	if !rxFound {
+		fmt.Println("Aggregator does not lead to rx")
+		return
+	}
+	if len(aggMod.conInputList) == 0 {
+		fmt.Println("Aggregator has no inputs")
+		return
+	}
+
+	// Для каждого входа найдём период:
+	for _, inm := range aggMod.conInputList {
+		reset(modules)
+
+		stateMap := make(map[string]int)
+		// var pattern []PulseType
+
+		step := 0
+		// Сохраним начальное состояние
+		s := getCurrentState(modules)
+		stateMap[s] = step
+
+		for {
+			step++
+			pressButton(modules)
+			val := aggMod.conInputs[inm]
+			pattern = append(pattern, val)
+			st := getCurrentState(modules)
+			if oldStep, ok := stateMap[st]; ok {
+				// Цикл найден
+				offset := oldStep
+				period := step - oldStep
+				fmt.Printf("Subsystem input %s: period=%d, offset=%d\n", inm, period, offset)
+				break
+			}
+			stateMap[st] = step
+		}
+	}
+
+}
